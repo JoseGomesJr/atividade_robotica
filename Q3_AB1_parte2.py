@@ -1,18 +1,17 @@
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 from spatialmath.base.transforms3d import transl, trotz
 from spatialmath.base import *
 from roboticstoolbox import RevoluteDH, PrismaticDH, DHRobot
 
 def calcular_TRANS(vector, L1, L2, D1, D4):
-    Matriz_A = np.matrix([[math.cos(vector[0]), -math.sin(vector[0]),  0, L1 * math.cos(vector[0])],
-                        [math.sin(vector[0]),  math.cos(vector[0]),  0, L1 * math.sin(vector[0])],    
+    Matriz_A = np.matrix([[np.cos(vector[0]), -np.sin(vector[0]),  0, L1 * np.cos(vector[0])],
+                        [np.sin(vector[0]),  np.cos(vector[0]),  0, L1 * np.sin(vector[0])],    
                         [0,                    0,                    1, D1],
                         [0,                    0,                    0, 1]])
     
-    Matriz_B = np.matrix([[math.cos(vector[1]),  math.sin(vector[1]),  0, L2 * math.cos(vector[1])],
-                            [math.sin(vector[1]), -math.cos(vector[1]),  0, L2 * math.sin(vector[1])],  
+    Matriz_B = np.matrix([[np.cos(vector[1]),  np.sin(vector[1]),  0, L2 * np.cos(vector[1])],
+                            [np.sin(vector[1]), -np.cos(vector[1]),  0, L2 * np.sin(vector[1])],  
                             [0,                    0,                   -1.0, 0],
                             [0,                    0,                    0, 1]])
         
@@ -21,8 +20,8 @@ def calcular_TRANS(vector, L1, L2, D1, D4):
                             [0,  0,  1, vector[2]], 
                             [0,  0,  0, 1]])
 
-    Matriz_D = np.matrix([[math.cos(vector[3]), -math.sin(vector[3]),  0, 0],
-                            [math.sin(vector[3]),  math.cos(vector[3]),  0, 0],  
+    Matriz_D = np.matrix([[np.cos(vector[3]), -np.sin(vector[3]),  0, 0],
+                            [np.sin(vector[3]),  np.cos(vector[3]),  0, 0],  
                             [0,                    0,                    1, D4], 
                             [0,                    0,                    0, 1]])
         
