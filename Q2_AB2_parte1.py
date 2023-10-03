@@ -1,119 +1,76 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from spatialmath.base.transforms3d import transl, trotz
-from spatialmath.base import *
-from roboticstoolbox import RevoluteDH, PrismaticDH, DHRobot
+from spatialmath import SE3
+from roboticstoolbox import DHRobot, RevoluteDH, PrismaticDH
 
-x = 0
-y = 0.5
-z = -0.5
-L1 = 1
-L2 = 1
+L1 = 0.15
+L2 = 0.15
+L3 = 0.15
+# Letra A
+q1_range = np.linspace(-np.pi/2, np.pi/2, 50)
+q2_range = np.linspace(-np.pi/2, np.pi/2, 50)
+q3_range = np.linspace(-np.pi/2, np.pi/2, 50)
 
-############################Letra A############################
-points_L1_x = []
-points_L1_y = []
-points_L1_z = []
-points_L2_x = []
-points_L2_y = []
-points_L2_z = []
+ARTICU1 = RevoluteDH(a=0, alpha=-np.pi/2, offset=0)
+ARTICU2 = RevoluteDH(a=L2, alpha=0, offset=0)
+ARTICU3 = RevoluteDH(a=L3, alpha=0, offset=0)
+Manipulador = DHRobot([ARTICU1, ARTICU2, ARTICU3], name='Perna_Robotica')
 
-samples = 8
+end_effector_positions = []
 
-angq1 = np.linspace(0, np.pi, samples)
-angq2 = np.linspace(0, np.pi, samples)
-angq3 = np.linspace(0, np.pi, samples)
+for q1 in q1_range:
+    for q2 in q2_range:
+        for q3 in q3_range:
+            q = [q1, q2, q3]
+            T = Manipulador.fkine(q)
+            end_effector_positions.append(T.A[0:3, 3])
 
-for i in range(samples):
-    for j in range(samples):
-        x = 0
-        y = 0
-        z = 0
-        for l in range(11):
-            x = - ((L1 * l) / 10)*np.sin(angq2[j])*np.cos(angq1[i])
-            y =   ((L1 * l) / 10)*np.sin(angq2[j])*np.sin(angq1[i])
-            z = - ((L1 * l) / 10)*np.cos(angq2[j])
-            points_L1_x.append(x)
-            points_L1_y.append(y)
-            points_L1_z.append(z)
-        aux_x = x
-        aux_y = y
-        aux_z = z
-        for k in range(samples):
-            for l in range(11):
-                x = aux_x - ((L2 * l) / 10)*np.sin(angq2[j])*np.cos(angq3[k])
-                y = aux_y + ((L2 * l) / 10)*np.sin(angq2[j])*np.sin(angq3[k])
-                z = aux_z - ((L2 * l) / 10)*np.cos(angq2[j])
-                points_L2_x.append(x)
-                points_L2_y.append(y)
-                points_L2_z.append(z)
+end_effector_positions = np.array(end_effector_positions)
 
-second = plt.figure().add_subplot(111, projection = '3d')
-
-j1_x = L1 * np.cos(angq1)
-j1_y = L1 * np.sin(angq1)
-second.plot(j1_x, j1_y, 0, label='J1')
-
-j2_x = L2 * np.cos(angq2)
-j2_y = np.zeros_like(angq2)
-j2_z = L2 * np.sin(angq2)
-second.plot(j2_x, j2_y, j2_z, label='J2')
-
-j3_x = (L1 + L2) * np.cos(angq3)
-j3_y = (L1 + L2) * np.sin(angq3)
-second.plot(j3_x, j3_y, 0, label='J3')
-
-second.scatter(points_L1_x, points_L1_y, points_L1_z, marker = '.', s = 5, c='r')
-second.scatter(points_L2_x, points_L2_y, points_L2_z, marker = '.', s = 5, c='b')
-
-plt.title("A: Área de trabalho dos movimentos")
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(end_effector_positions[:, 0], end_effector_positions[:, 1], end_effector_positions[:, 2], s=1)
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+ax.set_title('Espaço de Trabalho da Perna Robótica')
 plt.show()
 
-    ############################Letra B############################
-def funcao(x, y, z, L1, L2):
-    radius = np.sqrt(z**2 + y**2)
-    cos3 = (y**2 + z**2 - L1**2 - L2**2) / (2 * L1 * L2)
-    cos2 = (y**2 + z**2 + L1**2 - L2**2) / (2 * L1 * radius) if radius != 0 else 0
+# Letra B
 
-    if abs(cos3) > 1 or abs(cos2) > 1:
-        print("Valor fora dos limites. Valor absoluto do cosseno entre os elos acima de 1")
-        return
+def ikine_leg(x, y, z):
+    L1 = 0.15
+    L2 = 0.15
+    L3 = 0.15
 
-    sen3 = np.sqrt(1 - cos3**2)
-    r31 = np.arctan2(sen3, cos3) + np.pi/2
-    r32 = np.arctan2(-sen3, cos3) + np.pi/2
-    sen2 = np.sqrt(1 - cos2**2)
-    r21 = np.arctan2(z, y) - np.arctan2(sen2, cos2)
-    r22 = np.arctan2(z, y) + np.arctan2(sen2, cos2)
-    r11 = np.arctan2(y, x) - np.pi/2
+    q1 = np.arctan2(y, x)
 
-    if abs(r11) > np.pi/2 or abs(r21) > np.pi/2 or abs(r31) > np.pi/2:
-        print("Solução 1:")
-        print('θ1 =', r11, 'θ2 =', r21, 'θ3 =', r31)
-        e1 = RevoluteDH(d = 0, alpha = np.pi / 2, offset = np.pi / 2)
-        e2 = RevoluteDH(a = L1)
-        e3 = RevoluteDH(a = L2, offset = -np.pi / 2)
-        rob = DHRobot([e1,e2,e3], name = 'RRR')
-        rob.teach([r11, r21, r31])
-        fkinerob = rob.fkine(q = [r11, r21, r31])
-        sol = rob.ikine_LM(fkinerob)
-        print('Pose =\n', fkinerob)
-        print('Solução 1:\n', sol)
-    else:
-        print("Valor fora dos limites propostos.")
+    r = np.sqrt(x**2 + y**2)
 
-    if abs(r11 - np.pi/2) > np.pi/2 or abs(r22) > np.pi/2 or abs(r32 - np.pi/2) > np.pi/2:
-        print("Solução 2:")
-        print('θ1 =', r11, 'θ2 =', r22, 'θ3 =', r32)
-        e1 = RevoluteDH(d = 0, alpha = np.pi / 2, offset = np.pi / 2)
-        e2 = RevoluteDH(a = L1)
-        e3 = RevoluteDH(a = L2, offset = -np.pi / 2)
-        rob = DHRobot([e1,e2,e3], name = 'RRR')
-        rob.teach([r11, r22, r32]) 
-        fkinerob = rob.fkine(q = [r11, r22, r32])
-        sol = rob.ikine_LM(fkinerob)
-        print('Pose =\n', fkinerob)
-        print('Solução 2:\n', sol)
-    
-    ############################Letra C############################
-funcao(0, 0.1, 0.1, 0.15, 0.15)
+    cos_q2 = (r**2 - L1**2 - L2**2) / (2 * L1 * L2)
+    sin_q2 = np.sqrt(1 - cos_q2**2)
+    q2 = np.arctan2(sin_q2, cos_q2)
+
+    q3 = np.arctan2(z - 0.15, r)
+
+    return [q1, q2, q3]
+
+
+ARTICU1 = RevoluteDH(a=0, alpha=-np.pi/2, offset=0)
+ARTICU2 = RevoluteDH(a=L2, alpha=0, offset=0)
+ARTICU3 = RevoluteDH(a=L3, alpha=0, offset=0)
+Manipulador_DH = DHRobot([ARTICU1, ARTICU2, ARTICU3], name='Perna_Robotica_DH')
+
+x_desired = 0.1
+y_desired = 0.1
+z_desired = 0.1
+
+q_ikine = ikine_leg(x_desired, y_desired, z_desired)
+
+T_desired = Manipulador_DH.fkine(q_ikine)
+q_DH = Manipulador_DH.ikine_LM(T_desired)
+
+print("Solução da cinemática inversa:", q_ikine)
+print("Solução da cinemática inversa do RobotDH:", q_DH)
+
+# Letra C
